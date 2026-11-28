@@ -1,0 +1,20 @@
+--- a/src/gallium/auxiliary/gallivm/lp_bld_misc.cpp
++++ b/src/gallium/auxiliary/gallivm/lp_bld_misc.cpp
+@@ -112,7 +112,8 @@
+    llvm::InitializeNativeTargetAsmPrinter();
+ 
+    llvm::InitializeNativeTargetDisassembler();
+-#if MESA_DEBUG
++   /* GALLIVM_LLC_OPTIONS is read in every build (it was a debug build's alone): the code generator's options can be tried without a rebuild
++    * (for example -regalloc=basic: the greedy register allocator takes seconds on a large fragment shader on a slow CPU) */
+    {
+       char *env_llc_options = os_get_option_dup("GALLIVM_LLC_OPTIONS");
+       if (env_llc_options) {
+@@ -134,7 +135,6 @@
+       }
+       free(env_llc_options);
+    }
+-#endif
+    lp_run_atexit_for_destructors();
+ }
+ 
