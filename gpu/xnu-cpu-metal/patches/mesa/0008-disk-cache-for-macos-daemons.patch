@@ -1,0 +1,17 @@
+--- a/src/util/disk_cache_os.c
++++ b/src/util/disk_cache_os.c
+@@ -1079,9 +1079,13 @@
+ bool
+ disk_cache_enabled()
+ {
+-   /* If running as a users other than the real user disable cache */
++   /* If running as a users other than the real user disable cache.
++    * Not on macOS: the system's own daemons (WindowServer: real user root, effective user _windowserver) draw through this
++    * driver, and their shader cache (the object code of the JIT'ed shaders, seconds to compile each on a slow CPU) is theirs. */
++#if !DETECT_OS_APPLE
+    if (!__normal_user())
+       return false;
++#endif
+ 
+    /* At user request, disable shader cache entirely.
+     * Disk cache is not enabled by default for android, for most
