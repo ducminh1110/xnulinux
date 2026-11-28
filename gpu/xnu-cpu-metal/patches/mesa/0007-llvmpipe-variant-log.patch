@@ -1,0 +1,43 @@
+--- a/src/gallium/drivers/llvmpipe/lp_state_fs.c
++++ b/src/gallium/drivers/llvmpipe/lp_state_fs.c
+@@ -58,6 +58,7 @@
+  */
+ 
+ #include <limits.h>
++#include <stdio.h>
+ #include "pipe/p_defines.h"
+ #include "util/u_inlines.h"
+ #include "util/u_memory.h"
+@@ -68,6 +69,7 @@
+ #include "util/u_dual_blend.h"
+ #include "util/u_upload_mgr.h"
+ #include "util/os_time.h"
++#include "util/os_misc.h"
+ #include "pipe/p_shader_tokens.h"
+ #include "draw/draw_context.h"
+ #include "nir/tgsi_to_nir.h"
+@@ -3861,6 +3863,11 @@
+       if (!cached.data_size)
+          needs_caching = true;
+    }
++   /* LP_VARIANT_LOG=1: one line on stderr for each fragment shader variant generated: its cache key, whether the object code was found on disk, the time */
++   static int variant_log = -1;
++   if (variant_log < 0) variant_log = os_get_option("LP_VARIANT_LOG") != NULL;
++   uint64_t variant_t0 = variant_log ? os_time_get_nano() : 0;
++   bool variant_hit = cached.data_size != 0;
+ 
+    struct lp_fragment_shader_variant_jit jit = { 0 };
+ 
+@@ -4071,6 +4078,12 @@
+       lp_linear_check_variant(variant, &jit);
+    }
+ 
++   if (variant_log) {
++      fprintf(stderr, "lpfs %s key=%02x%02x%02x%02x shader=%u variant=%u %.1f ms%s\n", variant_hit ? "HIT " : "MISS",
++              ir_blake3_cache_key[0], ir_blake3_cache_key[1], ir_blake3_cache_key[2], ir_blake3_cache_key[3],
++              shader->no, shader->variants_created, (os_time_get_nano() - variant_t0) / 1e6,
++              (!variant_hit && (!cached.data_size || cached.dont_cache)) ? " NOT-CACHED" : "");
++   }
+    if (needs_caching) {
+       lp_disk_cache_insert_shader(screen, &cached, ir_blake3_cache_key);
+    }
